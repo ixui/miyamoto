@@ -609,7 +609,7 @@ function setUp() {
     settings.setNote('無視するユーザ', '反応をしないユーザを,区切りで設定する。botは必ず指定してください。');
 
     // 休日を設定
-    var url = 'http://www.google.com/calendar/feeds/japanese@holiday.calendar.google.com/public/full-noattendees?alt=json&max-results=1000&start-min='+DateUtils.format("Y-m-d", DateUtils.now());
+    var url = 'http://www.google.com/calendar/feeds/japanese__ja@holiday.calendar.google.com/public/basic?alt=json&max-results=1000&start-min='+DateUtils.format("Y-m-d", DateUtils.now());
     var data = JSON.parse(UrlFetchApp.fetch(url).getContentText());
     var holidays = _.map(data.feed.entry, function(e) {
       return e['gd$when'][0]['startTime'];
@@ -743,7 +743,7 @@ loadTimesheets = function (exports) {
       ['actionWhoIsIn', /(だれ|誰|who\s*is)/],
       ['actionCancelOff', /(休|やす(ま|み|む)|休暇).*(キャンセル|消|止|やめ|ません)/],
       ['actionOff', /(休|やす(ま|み|む)|休暇)/],
-      ['actionSignIn', /(モ[ー〜]+ニン|も[ー〜]+にん|おっは|おは|へろ|はろ|ヘロ|ハロ|hi|hello|morning|出勤)/],
+      ['actionSignIn', /(モ[ー〜]+ニン|も[ー〜]+にん|おっは|ちわ|おは|へろ|はろ|ヘロ|ハロ|hi|hello|morning|出勤)/],
       ['confirmSignIn', /__confirmSignIn__/],
       ['confirmSignOut', /__confirmSignOut__/],
     ];
@@ -764,13 +764,13 @@ loadTimesheets = function (exports) {
     if(this.datetime) {
       var data = this.storage.get(username, this.datetime);
       if(!data.signIn || data.signIn === '-') {
-        this.storage.set(username, this.datetime, {signIn: this.datetime});
+        this.storage.set(username, this.datetime, {signIn: DateUtil.parseTime(this.datetime)});
         this.responder.template("出勤", username, this.datetimeStr);
       }
       else {
         // 更新の場合は時間を明示する必要がある
         if(!!this.time) {
-          this.storage.set(username, this.datetime, {signIn: this.datetime});
+          this.storage.set(username, this.datetime, {signIn: DateUtil.parseTime(this.datetime)});
           this.responder.template("出勤更新", username, this.datetimeStr);
         }
       }
@@ -782,13 +782,13 @@ loadTimesheets = function (exports) {
     if(this.datetime) {
       var data = this.storage.get(username, this.datetime);
       if(!data.signOut || data.signOut === '-') {
-        this.storage.set(username, this.datetime, {signOut: this.datetime});
+        this.storage.set(username, this.datetime, {signOut: DateUtil.parseTime(this.datetime)});
         this.responder.template("退勤", username, this.datetimeStr);
       }
       else {
         // 更新の場合は時間を明示する必要がある
         if(!!this.time) {
-          this.storage.set(username, this.datetime, {signOut: this.datetime});
+          this.storage.set(username, this.datetime, {signOut: DateUtil.parseTime(this.datetime)});
           this.responder.template("退勤更新", username, this.datetimeStr);
         }
       }
@@ -821,7 +821,13 @@ loadTimesheets = function (exports) {
 
   // 出勤中
   Timesheets.prototype.actionWhoIsIn = function(username, message) {
-    var dateObj = DateUtils.toDate(DateUtils.now());
+    var dateObj;
+    if(this.date) {
+      dateObj = new Date(this.date[0], this.date[1]-1, this.date[2]);
+    } else {
+      dateObj = DateUtils.toDate(DateUtils.now());
+    }
+
     var result = _.compact(_.map(this.storage.getByDate(dateObj), function(row) {
       return _.isDate(row.signIn) && !_.isDate(row.signOut) ? row.user : undefined;
     }));
@@ -836,7 +842,13 @@ loadTimesheets = function (exports) {
 
   // 休暇中
   Timesheets.prototype.actionWhoIsOff = function(username, message) {
-    var dateObj = DateUtils.toDate(DateUtils.now());
+    var dateObj;
+    if(this.date) {
+      dateObj = new Date(this.date[0], this.date[1]-1, this.date[2]);
+    } else {
+      dateObj = DateUtils.toDate(DateUtils.now());
+    }
+      
     var dateStr = DateUtils.format("Y/m/d", dateObj);
     var result = _.compact(_.map(this.storage.getByDate(dateObj), function(row){
       return row.signIn === '-' ? row.user : undefined;
