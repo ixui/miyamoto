@@ -647,12 +647,13 @@ function migrate() {
 
 
 
-/*
+
 function test1(e) {
   var miyamoto = init();
-  miyamoto.receiver.receiveMessage({user_name:"masuidrive", text:"hello 8:00"});
+  miyamoto.receiver.receiveMessage({user_name:"kawasaki", text:"ちわ"});
 }
-*/
+
+
 // Slackのインタフェース
 // Slack = loadSlack();
 
